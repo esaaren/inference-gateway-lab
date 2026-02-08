@@ -1,4 +1,3 @@
-
 # Exports 
 
 ``` bash
@@ -119,4 +118,78 @@ curl -i -X POST http://${IP}:${PORT}/v1/completions \
     "max_tokens": 150,
     "temperature": "0.9"
 }'
+```
+
+# GCS Fuse Setup
+
+## Enable GCS Fuse on the cluster
+```bash
+gcloud container clusters update <your-cluster-name> \
+    --update-addons GcsFuseCsiDriver=ENABLED \
+    --region <your-region>
+```
+
+## Create a Kubernetes Service Account
+```bash
+export KSA_NAME=<your-ksa-name>
+export NAMESPACE=<your-namespace>
+kubectl create serviceaccount ${KSA_NAME} --namespace ${NAMESPACE}
+```
+
+## Add IAM Policy Binding
+
+Replace `<your-project-id>`, `<your-project-number>`, `<your-namespace>`, and `<your-ksa-name>` with your actual values.
+
+### To a specific bucket:
+```bash
+export GSBUCKET=<your-bucket-name>
+gcloud storage buckets add-iam-policy-binding gs://${GSBUCKET} \
+  --member "principal://iam.googleapis.com/projects/<your-project-number>/locations/global/workloadIdentityPools/<your-project-id>.svc.id.goog/subject/ns/${NAMESPACE}/sa/${KSA_NAME}" \
+  --role "roles/storage.objectUser"
+```
+
+### To all buckets in the project:
+```bash
+gcloud projects add-iam-policy-binding <your-project-id> \
+  --member "principal://iam.googleapis.com/projects/<your-project-number>/locations/global/workloadIdentityPools/<your-project-id>.svc.id.goog/subject/ns/${NAMESPACE}/sa/${KSA_NAME}" \
+  --role "roles/storage.objectUser"
+```
+
+## Benchmarking
+
+Benchmarking is crucial for evaluating the performance of large language model (LLM) serving systems like vLLM. It helps in understanding the trade-offs between different configurations and hardware, ensuring optimal performance and cost-effectiveness. Key metrics to consider when benchmarking are:
+
+*   **Throughput**: The number of requests or tokens processed per unit of time. Higher throughput indicates a more efficient system.
+*   **Latency**: The time taken to process a single request. This is often measured as Time to First Token (TTFT) and Time Per Output Token (TPOT). Lower latency is critical for real-time applications.
+*   **Concurrency**: The number of simultaneous requests the system can handle.
+
+### Inference Gateway Benchmark
+
+The following table shows the results of a benchmark run on the Inference Gateway.
+
+```
+============ Serving Benchmark Result ============
+Successful requests:                     1000
+Failed requests:                         0
+Benchmark duration (s):                  22.30
+Total input tokens:                      1023001
+Total generated tokens:                  128000
+Request throughput (req/s):              44.85
+Output token throughput (tok/s):         5740.90
+Peak output token throughput (tok/s):    20081.00
+Peak concurrent requests:                1000.00
+Total token throughput (tok/s):          51623.28
+---------------Time to First Token----------------
+Mean TTFT (ms):                          8258.98
+Median TTFT (ms):                        7205.35
+P99 TTFT (ms):                           19045.12
+-----Time per Output Token (excl. 1st token)------
+Mean TPOT (ms):                          77.84
+Median TPOT (ms):                        86.12
+P99 TPOT (ms):                           103.86
+---------------Inter-token Latency----------------
+Mean ITL (ms):                           77.84
+Median ITL (ms):                         41.00
+P99 ITL (ms):                            267.36
+==================================================
 ```

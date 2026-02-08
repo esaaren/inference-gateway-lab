@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-ig-bench
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llama-server
+  template:
+    metadata:
+      labels:
+        app: llama-server
+    spec:
+      containers:
+      - name: inference-server
+        image: docker.io/vllm/vllm-openai:latest
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            echo "Starting Base Model Benchmark..."
+            vllm bench serve --backend vllm --model "meta-llama/Llama-3.1-8B-Instruct" --dataset-name random --random-output-len=128 --seed 100 --host 35.209.248.241 --port 80
+            
+            echo "Starting Adapter Benchmark..."
+            vllm bench serve \
+                --backend openai \
+                --model "food-review" \
+                --tokenizer "meta-llama/Llama-3.1-8B" \
+                --host 35.209.248.241 \
+                --port 80 \
+                --dataset-name random \
+                --num-prompts 1000 \
+                --random-output-len 128 \
+                --seed 100
+        env:
+        - name: HUGGING_FACE_HUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-secret
+              key: hf_api_token
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 250Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hf-secret
+type: Opaque
+stringData:
+  hf_api_token: "ADD_YOUR_HF_TOKEN_HERE" # Ensure you populate this

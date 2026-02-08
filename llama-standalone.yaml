@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llama-standalone-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llama-standalone-server
+  template:
+    metadata:
+      labels:
+        app: llama-standalone-server
+      annotations:
+        gke-gcsfuse/volumes: "true"
+    spec:
+      serviceAccountName: pmotgi-bucket-ksa
+      containers:
+      - name: inference-server
+        image: docker.io/vllm/vllm-openai:latest
+        resources:
+          requests:
+            nvidia.com/gpu: 1
+          limits:
+            nvidia.com/gpu: 1
+        # Added your vLLM serve command here
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            vllm serve /data/Meta-Llama-3.1-8B-Instruct \
+                --seed 42 \
+                --disable-log-requests \
+                --gpu-memory-utilization 0.94 \
+                --max-num-batched-tokens 2048 \
+                --max-num-seqs 256 \
+                --tensor-parallel-size 1 \
+                --port 7080 \
+                --download-dir=/data
+        env:
+        - name: HUGGING_FACE_HUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: hf-secret
+              key: hf_api_token
+        volumeMounts:
+        - mountPath: /dev/shm
+          name: dshm
+        - mountPath: /data
+          name: gcs-fuse-volume
+          readOnly: false
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 250Gi
+      - name: gcs-fuse-volume
+        csi:
+          driver: gcsfuse.csi.storage.gke.io
+          readOnly: false
+          volumeAttributes:
+            bucketName: pmotgi-ig-vllm
+            mountOptions: "implicit-dirs"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: llama-service
+spec:
+  selector:
+    app: llama-standalone-server
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    port: 8002
+    targetPort: 7080
+
+
+#Run Benchmark:
+#lvllm bench serve --backend vllm --model "meta-llama/Llama-3.1-8B-Instruct" --dataset-name random  --random-output-len=$MAX_OUTPUT_LEN  --seed 100
