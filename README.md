@@ -165,6 +165,13 @@ Benchmarking is crucial for evaluating the performance of large language model (
 
 ### Inference Gateway Benchmark
 
+To run the vLLM benchmark, apply the `vllm-bench.yaml` file.
+Wait until the pod status is `Completed`, then check the pod's logs for the final benchmarking output.
+
+```bash
+kubectl apply -f vllm-bench.yaml
+```
+
 The following table shows the results of a benchmark run on the Inference Gateway.
 
 ```
