@@ -29,6 +29,10 @@ spec:
         # REQUIRED: Enables the GCS FUSE sidecar
         gke-gcsfuse/volumes: "true"
     spec:
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
       serviceAccountName: pmotgi-bucket-ksa
       containers:
         - name: vllm

@@ -155,6 +155,26 @@ gcloud projects add-iam-policy-binding <your-project-id> \
   --role "roles/storage.objectUser"
 ```
 
+### Test against a deployment that uses GCSFuse
+```bash
+curl -i -X POST http://${IP}:${PORT}/v1/completions -H "Content-Type: application/json" -d '{
+>     "model": "/gcs/Meta-Llama-3.1-8B-Instruct",
+>     "prompt": "I just ate a spicy tuna roll and it was incredible. Write a short review.",
+>     "max_tokens": 150,
+>     "temperature": 0.9
+> }'
+HTTP/1.1 200 OK
+x-went-into-resp-headers: true
+date: Tue, 10 Feb 2026 00:35:45 GMT
+server: uvicorn
+content-type: application/json
+via: 1.1 google
+transfer-encoding: chunked
+
+{"choices":[{"finish_reason":"length","index":0,"logprobs":null,"prompt_logprobs":null,"prompt_token_ids":null,"stop_reason":null,"text":" 8/10\nI recently visited [Sushi Restaurant Name] and tried their Spicy Tuna Roll, which was a game-changer. The combination of fresh tuna, spicy mayo, and crunchy tempura bits was absolutely delightful. The roll was well-balanced, with a perfect balance of flavors and textures. The spicy kick from the wasabi and sriracha added a nice depth to the dish. The only reason I wouldn't give it a 10/10 is that the portion size was a bit small for the price. Nevertheless, I would highly recommend this roll to anyone who loves sushi and a little heat. 8/10. [Sushi Restaurant Name] has earned a new fan in me, and I will be","token_ids":null}],"created":1770683746,"id":"cmpl-7c83f4de-47c4-43ab-8d44-1345a4f07699","kv_transfer_params":null,"model":"/gcs/Meta-Llama-3.1-8B-Instruct","object":"text_completion","service_tier":null,"system_fingerprint":null,"usage":{"completion_tokens":150,"prompt_tokens":18,"prompt_tokens_details":null,"total_tokens":168}}
+
+```
+
 ## Benchmarking
 
 Benchmarking is crucial for evaluating the performance of large language model (LLM) serving systems like vLLM. It helps in understanding the trade-offs between different configurations and hardware, ensuring optimal performance and cost-effectiveness. Key metrics to consider when benchmarking are:
