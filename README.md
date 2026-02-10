@@ -122,6 +122,7 @@ curl -i -X POST http://${IP}:${PORT}/v1/completions \
 
 # GCS Fuse Setup
 
+
 ## Enable GCS Fuse on the cluster
 ```bash
 gcloud container clusters update <your-cluster-name> \
@@ -139,6 +140,17 @@ kubectl create serviceaccount ${KSA_NAME} --namespace ${NAMESPACE}
 ## Add IAM Policy Binding
 
 Replace `<your-project-id>`, `<your-project-number>`, `<your-namespace>`, and `<your-ksa-name>` with your actual values.
+
+## Create a Bucket
+```bash
+Single region-
+gcloud storage buckets create gs://BUCKET_NAME --location=LOCATION
+
+For multi region, example US:
+gcloud storage buckets create gs://my-global-app-data --location=US
+
+```
+
 
 ### To a specific bucket:
 ```bash
