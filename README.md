@@ -158,11 +158,11 @@ gcloud projects add-iam-policy-binding <your-project-id> \
 ### Test against a deployment that uses GCSFuse
 ```bash
 curl -i -X POST http://${IP}:${PORT}/v1/completions -H "Content-Type: application/json" -d '{
->     "model": "/gcs/Meta-Llama-3.1-8B-Instruct",
->     "prompt": "I just ate a spicy tuna roll and it was incredible. Write a short review.",
->     "max_tokens": 150,
->     "temperature": 0.9
-> }'
+     "model": "/gcs/Meta-Llama-3.1-8B-Instruct",
+     "prompt": "I just ate a spicy tuna roll and it was incredible. Write a short review.",
+     "max_tokens": 150,
+     "temperature": 0.9
+ }'
 HTTP/1.1 200 OK
 x-went-into-resp-headers: true
 date: Tue, 10 Feb 2026 00:35:45 GMT
